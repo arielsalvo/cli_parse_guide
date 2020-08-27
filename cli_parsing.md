@@ -156,9 +156,9 @@ Example command output of the `ip addr show` command
     inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
 2: enp0s31f6: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group default qlen 1000
-    link/ether e8:6a:64:9d:84:19 brd ff:ff:ff:ff:ff:ff
+    link/ether x2:6a:64:9d:84:19 brd ff:ff:ff:ff:ff:ff
 3: wlp2s0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
-    link/ether 6e:c2:44:f7:41:e0 brd ff:ff:ff:ff:ff:ff permaddr d8:f2:ca:99:5c:82
+    link/ether x6:c2:44:f7:41:e0 brd ff:ff:ff:ff:ff:ff permaddr d8:f2:ca:99:5c:82
 ```
 
 Example native parser template stored as `templates/fedora_ip_addr_show.yaml`
@@ -255,7 +255,7 @@ About the task:
 - The `show interface | json` command would have been issued on the device
 - The output would be set as the `interfaces` fact for the device
 
-### NTC_templates
+### NTC_templates example
 
 The ntc_templates python library includes pre-defined textfsm templates for parsing a variety of network device commands output.
 
@@ -306,7 +306,7 @@ About the task:
 - Additional information about the `ntc_templates` python library can be foud here: https://github.com/networktocode/ntc-templates
 
 
-### pyATS parsing engine
+### pyATS parsing engine example
 
 pyATS is part of the Cisco Test Automation & Validation Solution.  It includes many predefined parsers for a number of network platforms and commands.  The predefined parsers that are part of the pyATS package can be used with the `cli_parse` module.
 
@@ -320,7 +320,7 @@ Example task:
     set_fact: interfaces
 ```
 
-The follow fact would have been set as the `interface` fact for the host:
+The follow fact would have been set as the `interfaces` fact for the host:
 
 ```yaml
 mgmt0:
@@ -364,5 +364,96 @@ mgmt0:
   - The full list of pyATS included parsers can be found here: https://pubhub.devnetcloud.com/media/genie-feature-browser/docs/#/parsers
 
 
+### textfsm example
+
+textfsm is a python module which implements a template based state machine for parsing semi-formatted text. Originally developed to allow programmatic access to information returned from the command line interface (CLI) of networking devices.
+
+
+Example textfsm template stored as `templates/nxos_show_interface.textfsm`
+```
+Value Required INTERFACE (\S+)
+Value LINK_STATUS (.+?)
+Value ADMIN_STATE (.+?)
+Value HARDWARE_TYPE (.*)
+Value ADDRESS ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
+Value BIA ([a-zA-Z0-9]+.[a-zA-Z0-9]+.[a-zA-Z0-9]+)
+Value DESCRIPTION (.*)
+Value IP_ADDRESS (\d+\.\d+\.\d+\.\d+\/\d+)
+Value MTU (\d+)
+Value MODE (\S+)
+Value DUPLEX (.+duplex?)
+Value SPEED (.+?)
+Value INPUT_PACKETS (\d+)
+Value OUTPUT_PACKETS (\d+)
+Value INPUT_ERRORS (\d+)
+Value OUTPUT_ERRORS (\d+)
+Value BANDWIDTH (\d+\s+\w+)
+Value DELAY (\d+\s+\w+)
+Value ENCAPSULATION (\w+)
+Value LAST_LINK_FLAPPED (.+?)
+
+Start
+  ^\S+\s+is.+ -> Continue.Record
+  ^${INTERFACE}\s+is\s+${LINK_STATUS},\sline\sprotocol\sis\s${ADMIN_STATE}$$
+  ^${INTERFACE}\s+is\s+${LINK_STATUS}$$
+  ^admin\s+state\s+is\s+${ADMIN_STATE},
+  ^\s+Hardware(:|\s+is)\s+${HARDWARE_TYPE},\s+address(:|\s+is)\s+${ADDRESS}(.*bia\s+${BIA})*
+  ^\s+Description:\s+${DESCRIPTION}
+  ^\s+Internet\s+Address\s+is\s+${IP_ADDRESS}
+  ^\s+Port\s+mode\s+is\s+${MODE}
+  ^\s+${DUPLEX}, ${SPEED}(,|$$)
+  ^\s+MTU\s+${MTU}.*BW\s+${BANDWIDTH}.*DLY\s+${DELAY}
+  ^\s+Encapsulation\s+${ENCAPSULATION}
+  ^\s+${INPUT_PACKETS}\s+input\s+packets\s+\d+\s+bytes\s*$$
+  ^\s+${INPUT_ERRORS}\s+input\s+error\s+\d+\s+short\s+frame\s+\d+\s+overrun\s+\d+\s+underrun\s+\d+\s+ignored\s*$$
+  ^\s+${OUTPUT_PACKETS}\s+output\s+packets\s+\d+\s+bytes\s*$$
+  ^\s+${OUTPUT_ERRORS}\s+output\s+error\s+\d+\s+collision\s+\d+\s+deferred\s+\d+\s+late\s+collision\s*$$
+  ^\s+Last\s+link\s+flapped\s+${LAST_LINK_FLAPPED}\s*$$
+```
+
+Example task:
+```yaml
+- name: "Run command and parse with textfsm"
+  ansible.netcommon.cli_parse:
+    command: show interface
+    parser:
+      name: ansible.netcommon.textfsm
+    set_fact: interfaces
+```
+
+The follow fact would have been set as the `interfaces` fact for the host:
+
+```yaml
+- ADDRESS: X254.005a.f8b5
+  ADMIN_STATE: up
+  BANDWIDTH: 1000000 Kbit
+  BIA: X254.005a.f8b5
+  DELAY: 10 usec
+  DESCRIPTION: ''
+  DUPLEX: full-duplex
+  ENCAPSULATION: ARPA
+  HARDWARE_TYPE: Ethernet
+  INPUT_ERRORS: ''
+  INPUT_PACKETS: ''
+  INTERFACE: mgmt0
+  IP_ADDRESS: 192.168.101.14/24
+  LAST_LINK_FLAPPED: ''
+  LINK_STATUS: up
+  MODE: ''
+  MTU: '1500'
+  OUTPUT_ERRORS: ''
+  OUTPUT_PACKETS: ''
+  SPEED: 1000 Mb/s
+- ADDRESS: X254.005a.f8bd
+  ADMIN_STATE: up
+  BANDWIDTH: 1000000 Kbit
+  BIA: X254.005a.f8bd
+```
+
+About the task:
+- Because the `ansible_network_os` for the device was `cisco.nxos.nxos` it was converted to `nxos`. Alternatively the `parser/os` key can be used to manually provide the OS.
+- The textfsm template name defaulted to `templates/nxos_show_interface.textfsm` using a combination of the OS and command run. Alternatively the `parser/template_path` key can be used to override the gernated template path.
+- Detailed information about the `textfsm` parsing engine can be found here: https://github.com/google/textfsm
+- `textfsm` was previously made available as a filter plugin. Ansible users should transition to `cli_parse`
 
 
