@@ -19,17 +19,17 @@ Some of the more common use cases for parsing semi-structured text into ansible 
 
 ## Design overview
 
-cli_parse in an ansible module that can either run a cli command on a device and return a parsed result or can simply parse any text document.
+`cli_parse` in an ansible module that can either run a cli command on a device and return a parsed result or can simply parse any text document.
 
-cli_parse includes cli_parser plugins to interface with with a variety of parsing engines.  At the time of release, cli_parsing plugins are included for the following parsing engines:
+`cli_parse` includes cli_parser plugins to interface with with a variety of parsing engines.  At the time of release, cli_parsing plugins are included for the following parsing engines:
 
-- native:  The native parsing engine is built into ansible and requires no addition python libraries
-- xml: Convert XML to an ansible native data structure
-- textfsm: A python module which implements a template based state machine for parsing semi-formatted text
-- ntc_templates: Predefined textfsm templates packages supporting a variety of platforms and commands
-- ttp: A library for semi-structured text parsing using templates, with added capabilities to simplify the process
-- pyats: Use the parsers included with Cisco's Test Automation & Validation Solution
-- json: Convert json output at the cli to an ansible native data structure
+- `native`:  The native parsing engine is built into ansible and requires no addition python libraries
+- `xml`: Convert XML to an ansible native data structure
+- `textfsm`: A python module which implements a template based state machine for parsing semi-formatted text
+- `ntc_templates`: Predefined textfsm templates packages supporting a variety of platforms and commands
+- `ttp`: A library for semi-structured text parsing using templates, with added capabilities to simplify the process
+- `pyats`: Use the parsers included with Cisco's Test Automation & Validation Solution
+- `json`: Convert json output at the cli to an ansible native data structure
 
 Because cli_parse uses a plugin based architecture additional parsing engines can be used from any ansible collection.
 
