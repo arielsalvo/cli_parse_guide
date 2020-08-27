@@ -104,10 +104,10 @@ An example template stored as `templates/nxos_show_interface.yaml`
 
 A native parser template is stuctured as a list of parsers, each containing the following key, value pairs:
 
-- example: An example line of the text line to be parsed
-- getval: A regular expression using named capture groups to store the extracted data
-- result: A data tree, populated as a template, from the parsed data
-- shared: (optional) The shared key makes the parsed values available to the rest of the parser entries until matched again.
+- `example`: An example line of the text line to be parsed
+- `getval`: A regular expression using named capture groups to store the extracted data
+- `result`: A data tree, populated as a template, from the parsed data
+- `shared`: (optional) The shared key makes the parsed values available to the rest of the parser entries until matched again.
 
 An example task using the native parser and the template above:
 
