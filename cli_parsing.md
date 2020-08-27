@@ -41,7 +41,7 @@ Because cli_parse uses a plugin based architecture additional parsing engines ca
 
 ## Parsing engine specifics
 
-### Native parsing engine
+### Parsing with the native parsing engine
 
 The native parsing engine is included with the `cli_parse` module. It uses data captured using regular expressions to populate the parsed data structure.
 
@@ -141,6 +141,7 @@ About the task:
 - Information specific to the parser engine is provided in the `parser` key
 - To use the `native` parser, the full name of the parsing engine, including it's collection, is provided as `name` (`ansible.netcommon.native`)
 - The `cli_parse` module, by default, will look for the template in the templates directory as `{{ short_os }}_{{ command }}.yaml`. The `short_os` is derived from either the hosts `ansible_network_os` or `ansible_distribution`. The `command` spaces are replace with `_`.
+- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
 
 #### Linux example
 
@@ -237,8 +238,10 @@ About the task:
 - Note the use of `shared` in the parser template, this allows the interface name to be used in subsequent parser entries
 - Facts would have been gatherd prior to determine the `ansible_distribution` needed to locate the template. Alternatively, the `parse/template_path` could have been provided
 - The use of examples and free-spacing mode with the regular expressions can make for a more-readable template
+- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
 
-### Json parsing example
+
+### Parsing json
 
 Although Ansible will natively convert serialized json to ansible native data when recognised, the `cli_parse` module can be used as well.
 
@@ -254,6 +257,8 @@ Although Ansible will natively convert serialized json to ansible native data wh
 About the task:
 - The `show interface | json` command would have been issued on the device
 - The output would be set as the `interfaces` fact for the device
+- json support is provide primary for playbook consistancy
+- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
 
 ### NTC_templates example
 
@@ -304,6 +309,7 @@ About the task:
 - In this case the device's `ansible_network_os` was converted to the ntc_template format `cisco_nxos`.  Alternatively the `os` could have been provided with the `parser/os` key.
 - The `cisco_nxos_show_interface.textfsm` template, included with the ntc_templates package, was used to parse the output
 - Additional information about the `ntc_templates` python library can be foud here: https://github.com/networktocode/ntc-templates
+- Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
 
 
 ### pyATS parsing engine example
@@ -362,6 +368,7 @@ mgmt0:
   - The `cli_parse` module sets `cisco.ios.ios` to `iosxe` for pyATS, This can be overidden with the `parser/os` key.
   - `cli_parse` uses only uses the predefined parsers in pyATS. The full documentation for pyATS can be found here: https://developer.cisco.com/docs/pyats/
   - The full list of pyATS included parsers can be found here: https://pubhub.devnetcloud.com/media/genie-feature-browser/docs/#/parsers
+  - Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
 
 
 ### textfsm example
@@ -455,5 +462,6 @@ About the task:
 - The textfsm template name defaulted to `templates/nxos_show_interface.textfsm` using a combination of the OS and command run. Alternatively the `parser/template_path` key can be used to override the gernated template path.
 - Detailed information about the `textfsm` parsing engine can be found here: https://github.com/google/textfsm
 - `textfsm` was previously made available as a filter plugin. Ansible users should transition to `cli_parse`
+- Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
 
 
