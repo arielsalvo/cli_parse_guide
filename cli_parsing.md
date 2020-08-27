@@ -13,7 +13,7 @@ Some of the more common use cases for parsing semi-structured text into Ansible 
 - Used with the `when` clause to conditionally run other tasks or roles
 - Configuration and operational state compliance checking used with the `assert` module
 - Used with the `template` module to generate reports about configuration and operational state information
-- Generate device commands or configuration when used with templates and `command` of `config` modules
+- Generate host, device or platform commands or configuration when used with templates and `command` or `config` modules
 - Suppliment native facts information when used along side current platform `facts` modules
 - Populate the Ansible inventory or a CMDB with new structured data
 
@@ -141,7 +141,7 @@ About the task:
 - Information specific to the parser engine is provided in the `parser` key
 - To use the `native` parser, the full name of the parsing engine, including it's collection, is provided as `name` (`ansible.netcommon.native`)
 - The `cli_parse` module, by default, will look for the template in the templates directory as `{{ short_os }}_{{ command }}.yaml`. The `short_os` is derived from either the hosts `ansible_network_os` or `ansible_distribution`. The `command` spaces are replace with `_`.
-- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
+- The `ansible.netcommon.native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
 
 #### Linux example
 
@@ -236,9 +236,9 @@ enp64s0u1:
 ```
 About the task:
 - Note the use of `shared` in the parser template, this allows the interface name to be used in subsequent parser entries
-- Facts would have been gatherd prior to determine the `ansible_distribution` needed to locate the template. Alternatively, the `parse/template_path` could have been provided
+- Facts would have been gatherd prior to determine the `ansible_distribution` needed to locate the template. Alternatively, the `parser/template_path` could have been provided
 - The use of examples and free-spacing mode with the regular expressions can make for a more-readable template
-- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
+- The `ansible.netcommon.native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
 
 
 ### Parsing json
@@ -258,9 +258,9 @@ About the task:
 - The `show interface | json` command would have been issued on the device
 - The output would be set as the `interfaces` fact for the device
 - json support is provide primary for playbook consistancy
-- The `native` parsing engine is fully supported with a Red Hat Ansible Automation Platform subscription
+- The use of `ansible.netcommon.json` is fully supported with a Red Hat Ansible Automation Platform subscription
 
-### NTC_templates example
+### Parsing with ntc_templates
 
 The ntc_templates python library includes pre-defined textfsm templates for parsing a variety of network device commands output.
 
@@ -274,7 +274,7 @@ Example task:
     set_fact: interfaces
 ```
 
-The follow fact would have been set as the `interface` fact for the host:
+The follow fact would have been set as the `interfaces` fact for the host:
 
 ```yaml
 interfaces:
@@ -309,10 +309,10 @@ About the task:
 - In this case the device's `ansible_network_os` was converted to the ntc_template format `cisco_nxos`.  Alternatively the `os` could have been provided with the `parser/os` key.
 - The `cisco_nxos_show_interface.textfsm` template, included with the ntc_templates package, was used to parse the output
 - Additional information about the `ntc_templates` python library can be foud here: https://github.com/networktocode/ntc-templates
-- Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
+- Red Hat Ansible Automation Platform subscription support is limited to the use of the ntc_templates public APIs as documented.
 
 
-### pyATS parsing engine example
+### Parsing with pyATS
 
 pyATS is part of the Cisco Test Automation & Validation Solution.  It includes many predefined parsers for a number of network platforms and commands.  The predefined parsers that are part of the pyATS package can be used with the `cli_parse` module.
 
@@ -368,10 +368,10 @@ mgmt0:
   - The `cli_parse` module sets `cisco.ios.ios` to `iosxe` for pyATS, This can be overidden with the `parser/os` key.
   - `cli_parse` uses only uses the predefined parsers in pyATS. The full documentation for pyATS can be found here: https://developer.cisco.com/docs/pyats/
   - The full list of pyATS included parsers can be found here: https://pubhub.devnetcloud.com/media/genie-feature-browser/docs/#/parsers
-  - Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
+  - Red Hat Ansible Automation Platform subscription support is limited to the use of the pyATS public APIs as documented.
 
 
-### textfsm example
+### Parsing with textfsm
 
 textfsm is a python module which implements a template based state machine for parsing semi-formatted text. Originally developed to allow programmatic access to information returned from the command line interface (CLI) of networking devices.
 
@@ -460,8 +460,242 @@ The follow fact would have been set as the `interfaces` fact for the host:
 About the task:
 - Because the `ansible_network_os` for the device was `cisco.nxos.nxos` it was converted to `nxos`. Alternatively the `parser/os` key can be used to manually provide the OS.
 - The textfsm template name defaulted to `templates/nxos_show_interface.textfsm` using a combination of the OS and command run. Alternatively the `parser/template_path` key can be used to override the gernated template path.
-- Detailed information about the `textfsm` parsing engine can be found here: https://github.com/google/textfsm
-- `textfsm` was previously made available as a filter plugin. Ansible users should transition to `cli_parse`
-- Red Hat Ansible Automation Platform subscription support is limited to the use of public API as documented.
+- Detailed information about `textfsm` can be found here: https://github.com/google/textfsm
+- textfsm was previously made available as a filter plugin. Ansible users should transition to `cli_parse`
+- Red Hat Ansible Automation Platform subscription support is limited to the use of the textfsm public APIs as documented.
+
+
+### Parsing with ttp
+
+TTP is a Python library for semi-structured text parsing using templates.  TTP uses a jinja like syntax to limit the need for regular expressions.  User familiar with jinja templating may find TTP's template syntax familiar.
+
+Example template stored as `templates/nxos_show_interfaces.ttp`
+
+```jinja
+{{ interface }} is {{ state }}
+admin state is {{ admin_state }}{{ ignore(".*") }}
+```
+Example task:
+```yaml
+- name: "Run command and parse with ttp"
+  ansible.netcommon.cli_parse:
+    command: show interface
+    parser:
+      name: ansible.netcommon.ttp
+    set_fact: interfaces
+```
+
+The follow fact would have been set as the `interfaces` fact for the host:
+
+```yaml
+- admin_state: up,
+  interface: mgmt0
+  state: up
+- admin_state: up,
+  interface: Ethernet1/1
+  state: up
+- admin_state: up,
+  interface: Ethernet1/2
+  state: up
+```
+
+About the task:
+- The default template path `templates/nxos_show_interface.ttp` was generated using the `ansible_network_os` for the host and `command` provided
+- TTP supports several additional variables that will be passed to the parser.  These include:
+  - `parser/vars/ttp_init`: Additional parameter passed when the parser is initialized
+  - `parser/vars/ttp_results`: Additional params used to influence the parser output
+  - `parser/vars/ttp_vars`: Additional variables made available in the template
+- Additioanl docuemtation about ttp can be found here: https://ttp.readthedocs.io
+
+
+### Converting XML
+
+Although Ansible contains a number of plugins that can convert XML to Ansible native data structures, `cli_parse` run command on devices that return XML and return the converted data in a single task.
+
+Example task:
+```yaml
+- name: "Run command and parse as xml"
+    ansible.netcommon.cli_parse:
+      command: show interface | xml
+      parser:
+        name: ansible.netcommon.xml
+  set_fact: interfaces
+```
+The follow fact would have been set as the `interfaces` fact for the host:
+
+```yaml
+nf:rpc-reply:
+  '@xmlns': http://www.cisco.com/nxos:1.0:if_manager
+  '@xmlns:nf': urn:ietf:params:xml:ns:netconf:base:1.0
+  nf:data:
+    show:
+      interface:
+        __XML__OPT_Cmd_show_interface_quick:
+          __XML__OPT_Cmd_show_interface___readonly__:
+            __readonly__:
+              TABLE_interface:
+                ROW_interface:
+                - admin_state: up
+                  encapsulation: ARPA
+                  eth_autoneg: 'on'
+                  eth_bia_addr: x254.005a.f8b5
+                  eth_bw: '1000000'
+```
+About the task:
+
+- Red Hat Ansible Automation Platform subscription support is limited to the use of the xmltodict public APIs as documented.
+
+
+## Advanced Usage
+
+The `cli_parse` module supports several features to support more complex uses cases.
+
+### Provide a full template path
+
+In the case the default template path needs to be overridden, it can be provided in the task
+
+```yaml
+- name: "Run command and parse with native"
+  ansible.netcommon.cli_parse:
+    command: show interface
+    parser:
+      name: ansible.netcommon.native
+      template_path: /home/user/templates/filename.yaml
+```
+
+### Provide command to parser different than the command run
+
+In the case the command run doesn't match the command the parser is expecting, it can be provided directly
+
+```yaml
+- name: "Run command and parse with native"
+  ansible.netcommon.cli_parse:
+    command: sho int
+    parser:
+      name: ansible.netcommon.native
+      command: show interface
+```
+
+### Provide a custom OS value
+
+Rather than using `ansible_network_os` or `ansible_distribution` for the generation of the template path or with the specified parser engine, it can be provided within the task.
+
+```yaml
+- name: Use ios instead of iosxe for pyats
+  ansible.netcommon.cli_parse:
+    command: show something
+    parser:
+      name: ansible.netcommon.pyats
+      os: ios
+
+- name: Use linux instead of fedora from ansible_distribution
+  ansible.netcommon.cli_parse:
+    command: ps -ef
+    parser:
+      name: ansible.netcommon.native
+      os: linux
+```
+
+### Parse exisiting text
+
+If the text needing to be parsed was collected earlier in the playbook or stored in a file, it can be provided to `cli_parse` as `text` instead of `command`.
+
+```yaml
+# using /home/user/templates/filename.yaml
+- name: "Parse text from previous task"
+  ansible.netcommon.cli_parse:
+    text: "{{ output['stdout'] }}"
+    parser:
+      name: ansible.netcommon.native
+      template_path: /home/user/templates/filename.yaml
+
+ # using /home/user/templates/filename.yaml
+- name: "Parse text from file"
+  ansible.netcommon.cli_parse:
+    text: "{{ lookup('file', 'path/to/file.txt') }}"
+    parser:
+      name: ansible.netcommon.native
+      template_path: /home/user/templates/filename.yaml
+
+# using templates/nxos_show_version.yaml
+- name: "Parse text from previous task"
+  ansible.netcommon.cli_parse:
+    text: "{{ sho_version['stdout'] }}"
+    parser:
+      name: ansible.netcommon.native
+      os: nxos
+      command: show version
+```
+
+## Developer Notes
+
+`cli_parse` can be used as an entry point for a cli_parser plugin in any collection.
+
+Sample custom cli_parser plugin:
+
+```python
+from ansible_collections.ansible.netcommon.plugins.module_utils.cli_parser.cli_parserbase import (
+    CliParserBase,
+)
+
+class CliParser(CliParserBase):
+    """ Sample cli_parser plugin
+    """
+
+    # Use the follow extention when loading a template
+    DEFAULT_TEMPLATE_EXTENSION = "txt"
+    # Provide the contents of the template to the parse function
+    PROVIDE_TEMPLATE_CONTENTS = True
+
+    def myparser(text, template_contents):
+      # parse the text using the template contents
+      return {...}
+
+    def parse(self, *_args, **kwargs):
+        """ Std entry point for a cli_parse parse execution
+
+        :return: Errors or parsed text as structured data
+        :rtype: dict
+
+        :example:
+
+        The parse function of a parser should return a dict:
+        {"errors": [a list of errors]}
+        or
+        {"parsed": obj}
+        """
+        template_contents = kwargs["template_contents"]
+        text = self._task_args.get("text")
+        try:
+            parsed = myparser(text, template_contents)
+        except Exception as exc:
+            msg = "Custome parser returned an error while parsing. Error: {err}"
+            return {"errors": [msg.format(err=to_native(exc))]}
+        return {"parsed": parsed}
+```
+
+Example task:
+```yaml
+- name: Use a custom cli_parser
+  ansible.netcommon.cli_parse:
+    command: ls -l
+    parser:
+      name: my_organiztion.my_collection.custom_parser
+```
+
+About the plugin:
+- Each cli_parser plugin requires a `CliParser` class
+- Each cli_parser plugin requires a `parse` function
+- Always return a dictionary with `errors` or `parsed`
+- Place the custom cli_parser in plugins/cli_parsers directory of the collection
+- See the current cli_parsers for additional examples: https://github.com/ansible-collections/ansible.netcommon/tree/main/plugins/cli_parsers
+
+
+
+
+
+
+
+
 
 
