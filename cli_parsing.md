@@ -43,9 +43,9 @@ Because cli_parse uses a plugin based architecture additional parsing engines ca
 
 ### Native parsing engine
 
-The native parsing engine is included with the cli_parse module. It uses data captured using regular expressions to populate the parsed data structure.
+The native parsing engine is included with the `cli_parse` module. It uses data captured using regular expressions to populate the parsed data structure.
 
-The native parsing engine requires a template be used to parse the command output. A native template stored as a yaml file.
+The native parsing engine requires a template be used to parse the command output. A native template is stored as a yaml file.
 
 
 #### Networking example
